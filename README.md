@@ -14,5 +14,3 @@ La base de données SQLite est créée automatiquement au premier lancement dans
 | hsarrazin   | password123   | Administrateur |
 | mtremblay   | password123   | Repartiteur    |
 
-## Équipe
-- 
