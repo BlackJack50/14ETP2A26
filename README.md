@@ -3,7 +3,7 @@ Taxiturne
 
 ## Prérequis
 - SDK .NET 9 (voir `global.json`)
-- Visual Studio 2022 (17.12 ou plus récent)
+- Visual Studio 2022/2026 (17.12 ou plus récent)
 
 ## Démarrage
 La base de données SQLite est créée automatiquement au premier lancement dans
