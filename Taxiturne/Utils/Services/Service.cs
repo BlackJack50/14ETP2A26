@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Taxiturne.Utils.Services.Interfaces;
+using Taxiturne.Model;
 
 namespace Taxiturne.Utils.Services
 {

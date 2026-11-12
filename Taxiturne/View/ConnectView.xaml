@@ -12,9 +12,11 @@
             <Label Width="200" Margin="10">Nom d'utilisateur</Label>
             <TextBox Text="{Binding Username, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="10"/>
             <Label Width="200" Margin="10">Mot de passe</Label>
-            <TextBox Text="{Binding Password, UpdateSourceTrigger=PropertyChanged}" Width="200" Margin="10"/>
+            <PasswordBox x:Name="PasswordInput"
+             Width="200"
+             Margin="10"/>
             <TextBlock Text="{Binding ErrorMessages, UpdateSourceTrigger=PropertyChanged}" Foreground="Red" HorizontalAlignment="Center" Margin="10"/>
-            <Button Content="Save" Command="{Binding ConnectCommand}" Width="200" Margin="10"/>
+            <Button Content="Save" Command="{Binding ConnectCommand}" CommandParameter="{Binding ElementName=PasswordInput}" Width="200" Margin="10"/>
         </StackPanel>
     </Grid>
 </UserControl>

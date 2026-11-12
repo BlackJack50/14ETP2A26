@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel;
+using Taxiturne.Model;
 
 namespace Taxiturne.Utils.Services.Interfaces
 {
