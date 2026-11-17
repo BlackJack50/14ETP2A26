@@ -80,7 +80,15 @@ namespace Taxiturne.ViewModel
             if (user != null)
             {
                 _userSessionService.ConnectedUser = user;
-                _navigationService.NavigateTo<HomeViewModel>();
+
+                if (user.Role == "Repartiteur")
+                {
+                    _navigationService.NavigateTo<RepartiteurViewModel>();
+                }
+                else
+                {
+                    _navigationService.NavigateTo<HomeViewModel>();
+                }
             }
             else
             {

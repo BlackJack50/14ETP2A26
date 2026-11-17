@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using Taxiturne.Model;
 
@@ -19,6 +20,9 @@ namespace Taxiturne.ViewModel
         private readonly INavigationService _navigationService;
         private readonly IUserSessionService _userSessionService;
 
+
+
+
         public User? ConnectedUser
         {
             get => _userSessionService.ConnectedUser;
@@ -29,8 +33,7 @@ namespace Taxiturne.ViewModel
             get => ConnectedUser == null ? "Bienvenue chère personne inconnue!" : $"Bienvenue {ConnectedUser.Prenom} ({ConnectedUser.Role})!";
         }
 
-        public HomeViewModel(IUserDAL userDAL, INavigationService navigationService, IUserSessionService userSessionService)
-        {
+        public HomeViewModel(IUserDAL userDAL, INavigationService navigationService, IUserSessionService userSessionService) { 
             _userDAL = userDAL;
             _navigationService = navigationService;
             _userSessionService = userSessionService;

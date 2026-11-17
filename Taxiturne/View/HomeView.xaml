@@ -6,12 +6,11 @@
              xmlns:local="clr-namespace:Taxiturne.View"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
+    <!--<UserControl.Resources>
+        <DataTemplate >
+            <local:HomeView />
+        </DataTemplate>
+    </UserControl.Resources>-->
     <Grid>
-        <StackPanel>
-            <TextBlock Text="{Binding WelcomeMessage, UpdateSourceTrigger=PropertyChanged}" 
-                       FontSize="24" 
-                       FontWeight="Bold" 
-                       Margin="10"/>
-        </StackPanel>
     </Grid>
 </UserControl>
