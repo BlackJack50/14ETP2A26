@@ -5,16 +5,20 @@ namespace Taxiturne.Model.DAL
 {
     public class CourseDAL : ICourseDAL
     {
-        private readonly ApplicationDbContext _contexte;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public CourseDAL(ApplicationDbContext contexte)
+        public CourseDAL(
+            IDbContextFactory<ApplicationDbContext> contextFactory)
         {
-            _contexte = contexte;
+            _contextFactory = contextFactory;
         }
 
         public IReadOnlyList<Course> ObtenirCoursesDemandees()
         {
-            return _contexte.Courses
+            using var context = _contextFactory.CreateDbContext();
+
+            return context.Courses
+                .AsNoTracking()
                 .Include(course => course.Client)
                 .Include(course => course.CategorieDemandee)
                 .Where(course => course.Statut == StatutCourse.Demandee)
@@ -24,8 +28,10 @@ namespace Taxiturne.Model.DAL
 
         public void MettreAJour(Course course)
         {
-            _contexte.Courses.Update(course);
-            _contexte.SaveChanges();
+            using var context = _contextFactory.CreateDbContext();
+
+            context.Courses.Update(course);
+            context.SaveChanges();
         }
     }
 }

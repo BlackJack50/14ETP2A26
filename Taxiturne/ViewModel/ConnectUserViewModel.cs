@@ -1,16 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Input;
+﻿using System.Windows.Input;
 using Taxiturne.Model;
 using Taxiturne.Model.DAL;
 using Taxiturne.Model.Interfaces;
 using Taxiturne.Utils;
 using Taxiturne.Utils.Commands;
 using Taxiturne.Utils.Services.Interfaces;
-using Taxiturne.Utils.Services;
 using System.Windows.Controls;
 
 namespace Taxiturne.ViewModel
