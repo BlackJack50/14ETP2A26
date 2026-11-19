@@ -1,16 +1,17 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿
 using Taxiturne.Model;
+using Taxiturne.Model.Interfaces;
 
 namespace Taxiturne.Services
 {
     public class RepartitionService : IRepartitionService
     {
-        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
+        private readonly IAffectationSessionFactory _sessionFactory;
 
         public RepartitionService(
-            IDbContextFactory<ApplicationDbContext> contextFactory)
+            IAffectationSessionFactory sessionFactory)
         {
-            _contextFactory = contextFactory;
+            _sessionFactory = sessionFactory;
         }
 
         public IReadOnlyList<string> ValiderConformite(
@@ -47,7 +48,8 @@ namespace Taxiturne.Services
                     "Le nombre de bagages dépasse la capacité du véhicule.");
             }
 
-            if (course.CategorieDemandeeId != vehicule.CategorieId)
+            if (course.CategorieDemandeeId !=
+                vehicule.CategorieId)
             {
                 erreurs.Add(
                     "Le véhicule n'est pas de la bonne catégorie.");
@@ -67,16 +69,13 @@ namespace Taxiturne.Services
             Course courseSelectionnee,
             Chauffeur chauffeurSelectionne)
         {
-            using var context = _contextFactory.CreateDbContext();
+            using var session = _sessionFactory.Ouvrir();
 
-            var course = context.Courses
-                .Include(c => c.CategorieDemandee)
-                .FirstOrDefault(c => c.Id == courseSelectionnee.Id);
+            var course = session.ObtenirCourse(
+                courseSelectionnee.Id);
 
-            var chauffeur = context.Chauffeurs
-                .Include(c => c.Vehicule)
-                .ThenInclude(v => v.Categorie)
-                .FirstOrDefault(c => c.Id == chauffeurSelectionne.Id);
+            var chauffeur = session.ObtenirChauffeur(
+                chauffeurSelectionne.Id);
 
             var erreurs = new List<string>();
 
@@ -95,7 +94,6 @@ namespace Taxiturne.Services
                 return erreurs;
             }
 
-            // Les deux entités existent à ce stade.
             if (course!.Statut != StatutCourse.Demandee)
             {
                 erreurs.Add("La course est déjà affectée.");
@@ -118,7 +116,7 @@ namespace Taxiturne.Services
             course.Statut = StatutCourse.Affectee;
             chauffeur.EstDisponible = false;
 
-            context.SaveChanges();
+            session.Sauvegarder();
 
             return erreurs;
         }

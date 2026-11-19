@@ -42,6 +42,9 @@ namespace Taxiturne
             services.AddSingleton<HomeViewModel>();
             services.AddSingleton<ConnectUserViewModel>();
             services.AddSingleton<RepartiteurViewModel>();
+            services.AddSingleton<IAffectationSessionFactory, AffectationSessionFactory>();
+            services.AddSingleton<IAuthentificationService, AuthentificationService>();
+
 
             services.AddSingleton<IUserDAL, UserDAL>();
             services.AddSingleton<ICourseDAL, CourseDAL>();

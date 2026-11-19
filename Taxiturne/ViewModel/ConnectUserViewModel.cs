@@ -1,21 +1,21 @@
-﻿using System.Windows.Input;
-using Taxiturne.Model;
-using Taxiturne.Model.DAL;
-using Taxiturne.Model.Interfaces;
+﻿
+using System.Windows.Controls;
+using System.Windows.Input;
+using Taxiturne.Services;
 using Taxiturne.Utils;
 using Taxiturne.Utils.Commands;
 using Taxiturne.Utils.Services.Interfaces;
-using System.Windows.Controls;
 
 namespace Taxiturne.ViewModel
 {
     class ConnectUserViewModel : BaseViewModel
     {
-        private readonly IUserDAL _userDAL;
-        private INavigationService _navigationService;
-        private IUserSessionService _userSessionService;
+        private readonly IAuthentificationService _authentificationService;
+        private readonly INavigationService _navigationService;
+        private readonly IUserSessionService _userSessionService;
 
-        private string _username;
+        private string _username = string.Empty;
+
         public string Username
         {
             get => _username;
@@ -30,7 +30,8 @@ namespace Taxiturne.ViewModel
             }
         }
 
-        private string _password;
+        private string _password = string.Empty;
+
         public string Password
         {
             get => _password;
@@ -45,82 +46,108 @@ namespace Taxiturne.ViewModel
             }
         }
 
-        // Constructeur pour initialiser les services et la commande de connexion
-        public ConnectUserViewModel(IUserDAL userDAL, INavigationService navigationService, IUserSessionService userSessionService)
+        public ICommand ConnectCommand { get; }
+
+        public ConnectUserViewModel(
+            IAuthentificationService authentificationService,
+            INavigationService navigationService,
+            IUserSessionService userSessionService)
         {
-            _userDAL = userDAL;
+            _authentificationService = authentificationService;
             _navigationService = navigationService;
             _userSessionService = userSessionService;
-            ConnectCommand = new RelayCommand(Connect, CanConnect);
+
+            ConnectCommand = new RelayCommand(
+                Connect,
+                CanConnect);
         }
 
-        public ICommand ConnectCommand { get; set; }
-
-        // Méthode pour gérer la connexion de l'utilisateur
-        private void Connect(Object parameter)
+        private void Connect(object parameter)
         {
-            if (parameter is PasswordBox passwordBox)
+            if (parameter is not PasswordBox passwordBox)
             {
-                Password = passwordBox.Password;
-            }
-            else
-            {
-                AddError(nameof(Password), "Le mot de passe est requis.");
+                AddError(
+                    nameof(Password),
+                    "Le mot de passe est requis.");
+
                 OnPropertyChanged(nameof(ErrorMessages));
                 return;
             }
 
-            User? user = _userDAL.FindByUsernameAndPassword(Username, Password);
-            if (user != null)
-            {
-                _userSessionService.ConnectedUser = user;
+            Password = passwordBox.Password;
 
-                if (user.Role == "Repartiteur")
-                {
-                    _navigationService.NavigateTo<RepartiteurViewModel>();
-                }
-                else
-                {
-                    _navigationService.NavigateTo<HomeViewModel>();
-                }
+            ValidateProperty(nameof(Username), Username);
+            ValidateProperty(nameof(Password), Password);
+
+            if (HasErrors)
+            {
+                return;
+            }
+
+            var user = _authentificationService.Authentifier(
+                Username,
+                Password);
+
+            if (user == null)
+            {
+                AddError(
+                    nameof(Password),
+                    "Utilisateur ou mot de passe invalide.");
+
+                OnPropertyChanged(nameof(ErrorMessages));
+                return;
+            }
+
+            _userSessionService.ConnectedUser = user;
+
+            if (user.Role == "Repartiteur")
+            {
+                _navigationService.NavigateTo<RepartiteurViewModel>();
             }
             else
             {
-                AddError(nameof(Password), "Utilisateur ou mot de passe invalide.");
-                OnPropertyChanged(nameof(ErrorMessages));
+                _navigationService.NavigateTo<HomeViewModel>();
             }
         }
 
-        // Vérifie si la commande de connexion peut être exécutée
         private bool CanConnect()
         {
-            bool allRequiredFieldsAreEntered = Username.NotEmpty();
-            return allRequiredFieldsAreEntered;
+            return !string.IsNullOrWhiteSpace(Username);
         }
 
-        // Valide les propriétés Username et Password
-        private void ValidateProperty(string propertyName, string value)
+        private void ValidateProperty(
+            string propertyName,
+            string value)
         {
             ClearErrors(propertyName);
+
             switch (propertyName)
             {
                 case nameof(Username):
-                    if (value.Empty())
+                    if (string.IsNullOrWhiteSpace(value))
                     {
-                        AddError(propertyName, "Le nom d'utilisateur est requis.");
+                        AddError(
+                            propertyName,
+                            "Le nom d'utilisateur est requis.");
                     }
                     else if (value.Length < 2)
                     {
-                        AddError(propertyName, "Le nom d'utilisateur doit contenir au moins 2 caractères.");
+                        AddError(
+                            propertyName,
+                            "Le nom d'utilisateur doit contenir au moins 2 caractères.");
                     }
                     break;
+
                 case nameof(Password):
-                    if (value.Empty())
+                    if (string.IsNullOrWhiteSpace(value))
                     {
-                        AddError(propertyName, "Le mot de passe est requis.");
+                        AddError(
+                            propertyName,
+                            "Le mot de passe est requis.");
                     }
                     break;
             }
+
             OnPropertyChanged(nameof(ErrorMessages));
         }
     }
