@@ -5,16 +5,20 @@ namespace Taxiturne.Model.DAL
 {
     public class ChauffeurDAL : IChauffeurDAL
     {
-        private readonly ApplicationDbContext _contexte;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public ChauffeurDAL(ApplicationDbContext contexte)
+        public ChauffeurDAL(
+            IDbContextFactory<ApplicationDbContext> contextFactory)
         {
-            _contexte = contexte;
+            _contextFactory = contextFactory;
         }
 
         public IReadOnlyList<Chauffeur> ObtenirChauffeursDisponibles()
         {
-            return _contexte.Chauffeurs
+            using var context = _contextFactory.CreateDbContext();
+
+            return context.Chauffeurs
+                .AsNoTracking()
                 .Include(chauffeur => chauffeur.Vehicule)
                 .ThenInclude(vehicule => vehicule.Categorie)
                 .Where(chauffeur => chauffeur.EstDisponible)

@@ -1,12 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
 using Taxiturne.Model;
 using Taxiturne.Model.Interfaces;
+using Taxiturne.Services;
 using Taxiturne.Utils;
 using Taxiturne.Utils.Commands;
 using Taxiturne.Utils.Services.Interfaces;
@@ -15,142 +12,138 @@ namespace Taxiturne.ViewModel
 {
     internal class RepartiteurViewModel : BaseViewModel
     {
-        private readonly IUserDAL _userDAL;
-        private readonly INavigationService _navigationService;
-        private readonly IUserSessionService _userSessionService;
+        private readonly IRepartitionService _repartitionService;
         private readonly ICourseDAL _courseDAL;
         private readonly IChauffeurDAL _chauffeurDAL;
+        private readonly IUserSessionService _userSessionService;
 
-        private ObservableCollection<Course> _courses;
-        private ObservableCollection<Chauffeur> _chauffeurs;
+        public ObservableCollection<Chauffeur> Chauffeurs { get; }
+            = new();
 
-        public ObservableCollection<Chauffeur> Chauffeurs
-        {
-            get => _chauffeurs ;
-        }
+        public ObservableCollection<Course> Courses { get; }
+            = new();
 
-        public ObservableCollection<Course> Courses
-        {
-            get => _courses ;  
-        }
-        private Chauffeur _selectedChauffer;
-        public Chauffeur SelectedChauffer
+        private Chauffeur? _selectedChauffer;
+
+        public Chauffeur? SelectedChauffer
         {
             get => _selectedChauffer;
-            set { _selectedChauffer = value; OnPropertyChanged(nameof(SelectedChauffer)); }
+            set
+            {
+                if (_selectedChauffer != value)
+                {
+                    _selectedChauffer = value;
+                    OnPropertyChanged();
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
         }
-        private Course _selectedCourse;
-        public Course SelectedCourse
+
+        private Course? _selectedCourse;
+
+        public Course? SelectedCourse
         {
             get => _selectedCourse;
-            set { _selectedCourse = value; OnPropertyChanged(nameof(SelectedCourse)); }
+            set
+            {
+                if (_selectedCourse != value)
+                {
+                    _selectedCourse = value;
+                    OnPropertyChanged();
+                    CommandManager.InvalidateRequerySuggested();
+                }
+            }
         }
 
-        private string _msgErreur;
+        private string _messageErreur = string.Empty;
+
         public string MessageErreur
         {
-            get => _msgErreur;
-            set { _msgErreur = value; OnPropertyChanged(nameof(MessageErreur)); }
+            get => _messageErreur;
+            set
+            {
+                if (_messageErreur != value)
+                {
+                    _messageErreur = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
-        public User? ConnectedUser
-        {
-            get => _userSessionService.ConnectedUser;
-        }
+        public User? ConnectedUser =>
+            _userSessionService.ConnectedUser;
 
-        public string WelcomeMessage
-        {
-            get => ConnectedUser == null ? "Bienvenue chère personne inconnue!" : $"Bienvenue {ConnectedUser.Prenom} ({ConnectedUser.Role})!";
-        }
+        public string WelcomeMessage =>
+            ConnectedUser == null
+                ? "Bienvenue chère personne inconnue!"
+                : $"Bienvenue {ConnectedUser.Prenom} ({ConnectedUser.Role})!";
 
-        public RepartiteurViewModel(IUserDAL userDAL, INavigationService navigationService, IUserSessionService userSessionService, ICourseDAL courseDAL, IChauffeurDAL chauffeurDAL)
+        public ICommand AttribuerCommand { get; }
+
+        public RepartiteurViewModel(
+            IRepartitionService repartitionService,
+            ICourseDAL courseDAL,
+            IChauffeurDAL chauffeurDAL,
+            IUserSessionService userSessionService)
         {
-            _userDAL = userDAL;
-            _navigationService = navigationService;
-            _userSessionService = userSessionService;
+            _repartitionService = repartitionService;
             _courseDAL = courseDAL;
-            LogoutCommand = new RelayCommand(Logout, CanLogout);
-            AttribuerCommand = new RelayCommand(Attribuer, CanAttribuer);
             _chauffeurDAL = chauffeurDAL;
-            _courses = new ObservableCollection<Course>(_courseDAL.ObtenirCoursesDemandees());
-            _chauffeurs = new ObservableCollection<Chauffeur>(_chauffeurDAL.ObtenirChauffeursDisponibles());
-        }
+            _userSessionService = userSessionService;
 
-        public ICommand AttribuerCommand { get; set; }
+            AttribuerCommand = new RelayCommand(
+                Attribuer,
+                CanAttribuer);
 
-        // Commande pour la déconnexion
-        public ICommand LogoutCommand { get; set; }
-
-        // Méthode pour gérer la déconnexion de l'utilisateur
-        private void Logout()
-        {
-            _userSessionService.ConnectedUser = null;
-            _navigationService.NavigateTo<ConnectUserViewModel>();
+            RafraichirListes();
         }
 
         private void Attribuer()
         {
-            if (SelectedChauffer != null && SelectedCourse != null)
+            if (SelectedCourse == null ||
+                SelectedChauffer == null)
             {
-                Vehicule vehicule = SelectedChauffer.Vehicule;
-                Course course = SelectedCourse;
-
-                List<string> erreurs = ValiderComformite(course, vehicule);
-
-                if (erreurs.Count > 0)
-                {
-                    MessageErreur += string.Join("\n", erreurs);
-                    return;
-                }
-
-                MessageErreur = null;
-
-                course.ChauffeurId = SelectedChauffer.Id;
-                course.Statut = StatutCourse.Affectee;
-                SelectedChauffer.EstDisponible = false;
-                _courseDAL.MettreAJour(course);
-            }
-        }
-        
-        private List<string> ValiderComformite(Course course, Vehicule vehicule)
-        {
-            List<string> erreurs = new List<string>();
-
-
-            if (course.SiegeEnfantRequis && !vehicule.PossedeSiegeEnfant)
-            {
-                erreurs.Add("Le véhicule ne possède pas de siège pour enfants.");
+                return;
             }
 
-            if (course.NombrePassagers > vehicule.Categorie.PassagersMax)
-            {
-                erreurs.Add("Le nombre de passagers dépasse la capacité du véhicule.");
-            }
+            var erreurs = _repartitionService.AttribuerCourse(
+                SelectedCourse,
+                SelectedChauffer);
 
-            if (course.AnimalABord && !vehicule.AccepteAnimaux)
-            {
-                erreurs.Add("Le véhicule ne accepte pas les animaux de compagnie.");
-            }
+            MessageErreur = string.Join("\n", erreurs);
 
-            if (course.NombreBagages > vehicule.Categorie.BagagesMax)
+            if (erreurs.Count == 0)
             {
-                erreurs.Add("Le nombre de bagages dépasse la capacité du véhicule.");
+                RafraichirListes();
             }
-
-            if (course.CategorieDemandee != vehicule.Categorie)
-                erreurs.Add("La véhicule n'est pas la bonne catégorie.");
-            return erreurs;
         }
 
         private bool CanAttribuer()
         {
-            return SelectedChauffer != null && SelectedCourse != null;
+            return SelectedCourse != null &&
+                   SelectedChauffer != null;
         }
 
-        // Vérifie si la commande de déconnexion peut être exécutée
-        private bool CanLogout()
+        private void RafraichirListes()
         {
-            return _userSessionService.IsUserConnected;
+            Chauffeurs.Clear();
+
+            foreach (var chauffeur in
+                _chauffeurDAL.ObtenirChauffeursDisponibles())
+            {
+                Chauffeurs.Add(chauffeur);
+            }
+
+            Courses.Clear();
+
+            foreach (var course in
+                _courseDAL.ObtenirCoursesDemandees())
+            {
+                Courses.Add(course);
+            }
+
+            SelectedChauffer = null;
+            SelectedCourse = null;
         }
     }
 }

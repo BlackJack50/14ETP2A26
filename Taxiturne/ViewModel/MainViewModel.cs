@@ -1,11 +1,6 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using System.Windows.Input;
-using Taxiturne.Model;
-using Taxiturne.Model.Interfaces;
+﻿using System.Windows.Input;
 using Taxiturne.Utils;
 using Taxiturne.Utils.Commands;
-using Taxiturne.Utils.Services;
 using Taxiturne.Utils.Services.Interfaces;
 
 namespace Taxiturne.ViewModel
@@ -43,10 +38,20 @@ namespace Taxiturne.ViewModel
             _userSessionService = userSessionService;
 
             NavigateToConnectUserViewCommand = new RelayCommand(() => NavigationService.NavigateTo<ConnectUserViewModel>());
-            NavigateToHomeViewCommand = new RelayCommand(() => NavigationService.NavigateTo<HomeViewModel>());
+            NavigateToHomeViewCommand = new RelayCommand(() =>
+            {
+                if (UserSessionService.IsUserConnected)
+                {
+                    NavigationService.NavigateTo<RepartiteurViewModel>();
+                }
+                else
+                {
+                    NavigationService.NavigateTo<ConnectUserViewModel>();
+                }
+            });
             DisconnectCommand = new RelayCommand(Disconnect, () => UserSessionService.IsUserConnected);
 
-            NavigationService.NavigateTo<HomeViewModel>();
+            NavigationService.NavigateTo<ConnectUserViewModel>();
         }
     }
 }
