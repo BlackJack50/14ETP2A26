@@ -1,22 +1,29 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using Microsoft.EntityFrameworkCore;
 using Taxiturne.Model.Interfaces;
-using Microsoft.EntityFrameworkCore;
 
 namespace Taxiturne.Model.DAL
 {
     public class UserDAL : IUserDAL
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public UserDAL(ApplicationDbContext c)
+        public UserDAL(
+            IDbContextFactory<ApplicationDbContext> contextFactory)
         {
-            _context = c;
+            _contextFactory = contextFactory;
         }
 
-        public User? FindByUsernameAndPassword(string u, string p)
+        public User? FindByUsernameAndPassword(
+            string username,
+            string password)
         {
-            return _context.Users.FirstOrDefault(u2 => u2.Username == u && u2.Password == p);
+            using var context = _contextFactory.CreateDbContext();
+
+            return context.Users
+                .AsNoTracking()
+                .FirstOrDefault(user =>
+                    user.Username == username &&
+                    user.Password == password);
         }
     }
 }

@@ -1,28 +1,37 @@
-﻿using System.Windows;
-using Taxiturne.Utils;
-using Taxiturne.ViewModel;
-using Microsoft.Extensions.DependencyInjection;
-using Taxiturne.Model.Interfaces;
-using Taxiturne.Model.DAL;
-using Taxiturne.Utils.Services.Interfaces;
-using Taxiturne.Utils.Services;
+﻿using System.IO;
+using System.Windows;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using System.IO;
+using Microsoft.Extensions.DependencyInjection;
+using Taxiturne.Model.DAL;
+using Taxiturne.Model.Interfaces;
+using Taxiturne.Services;
+using Taxiturne.Utils;
+using Taxiturne.Utils.Services;
+using Taxiturne.Utils.Services.Interfaces;
+using Taxiturne.ViewModel;
 
 namespace Taxiturne
 {
     public partial class App : Application
     {
         private readonly ServiceProvider _serviceProvider;
+
         public App()
         {
-            // Note à moi-même, mieux séparer en fonctions ici. 
-            var builder = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory());
-            IConfiguration configuration = builder.Build();
-
             IServiceCollection services = new ServiceCollection();
+
+            string dossier = Path.Combine(
+                Environment.GetFolderPath(
+                    Environment.SpecialFolder.ApplicationData),
+                "Taxiturne");
+
+            Directory.CreateDirectory(dossier);
+
+            string dbPath = Path.Combine(dossier, "Taxiturne.db");
+
+            services.AddDbContextFactory<ApplicationDbContext>(
+                options => options.UseSqlite(
+                    $"Data Source={dbPath}"));
 
             services.AddSingleton<MainWindow>(provider => new MainWindow
             {
@@ -33,41 +42,56 @@ namespace Taxiturne
             services.AddSingleton<HomeViewModel>();
             services.AddSingleton<ConnectUserViewModel>();
             services.AddSingleton<RepartiteurViewModel>();
+            services.AddSingleton<IAffectationSessionFactory, AffectationSessionFactory>();
+            services.AddSingleton<IAuthentificationService, AuthentificationService>();
+
 
             services.AddSingleton<IUserDAL, UserDAL>();
             services.AddSingleton<ICourseDAL, CourseDAL>();
             services.AddSingleton<IChauffeurDAL, ChauffeurDAL>();
+
+            services.AddSingleton<IRepartitionService, RepartitionService>();
+
             services.AddSingleton<INavigationService, NavigationService>();
             services.AddSingleton<IUserSessionService, Service>();
-            services.AddSingleton<MainViewModel>();
-            services.AddSingleton<Func<Type, BaseViewModel>>(serviceProvider =>
+
+            services.AddSingleton<Func<Type, BaseViewModel>>(provider =>
             {
                 BaseViewModel ViewModelFactory(Type viewModelType)
                 {
-                    return (BaseViewModel)serviceProvider.GetRequiredService(viewModelType);
+                    return (BaseViewModel)
+                        provider.GetRequiredService(viewModelType);
                 }
+
                 return ViewModelFactory;
             });
-
-            services.AddDbContext<ApplicationDbContext>();
 
             _serviceProvider = services.BuildServiceProvider();
         }
 
         protected override void OnStartup(StartupEventArgs e)
         {
-            using (var scope = _serviceProvider.CreateScope())
+            var contextFactory = _serviceProvider
+                .GetRequiredService<IDbContextFactory<ApplicationDbContext>>();
+
+            using (var context = contextFactory.CreateDbContext())
             {
-                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                if (dbContext.Database.EnsureCreated())
-                {
-                    dbContext.SeedData();
-                }
+                context.Database.EnsureCreated();
+                context.SeedData();
             }
 
-            var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
+            var mainWindow = _serviceProvider
+                .GetRequiredService<MainWindow>();
+
             mainWindow.Show();
+
             base.OnStartup(e);
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            _serviceProvider.Dispose();
+            base.OnExit(e);
         }
     }
 }
