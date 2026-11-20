@@ -35,6 +35,8 @@
 
             <converters:BoolToVisibilityConverter
                 x:Key="BoolToVisibilityConverter" />
+            <converters:BoolToTextConverter
+                x:Key="BoolToTextConverter" />
 
         </ResourceDictionary>
     </Application.Resources>

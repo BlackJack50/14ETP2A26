@@ -45,6 +45,9 @@
                             <TextBlock Text="{Binding CategorieDemandee.Nom, StringFormat='Catégorie demandée: {0}'}" FontSize="13" Opacity="0.7"/>
                             <TextBlock Text="{Binding NombrePassagers, StringFormat='Nombre de passagers: {0}'}" FontSize="13" Opacity="0.7"/>
                             <TextBlock Text="{Binding NombreBagages, StringFormat='Nombre de bagages: {0}'}" FontSize="13" Opacity="0.7"/>
+                            <TextBlock Text="{Binding AnimalABord, Converter={StaticResource BoolToTextConverter}, StringFormat='Animal à bord: {0}'}" FontSize="13" Opacity="0.7"/>
+                            <TextBlock Text="{Binding FauteuilRoulant, Converter={StaticResource BoolToTextConverter}, StringFormat='Fauteuil roulant requis: {0}'}" FontSize="13" Opacity="0.7"/>
+                            <TextBlock Text="{Binding SiegeEnfantRequis, Converter={StaticResource BoolToTextConverter}, StringFormat='Siège pour enfant requis: {0}'}" FontSize="13" Opacity="0.7"/>
                         </StackPanel>
                     </Border>
                 </DataTemplate>
