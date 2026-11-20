@@ -21,14 +21,17 @@ namespace Taxiturne.ViewModel
         private readonly ICourseDAL _courseDAL;
         private readonly IChauffeurDAL _chauffeurDAL;
 
+        private ObservableCollection<Course> _courses;
+        private ObservableCollection<Chauffeur> _chauffeurs;
+
         public ObservableCollection<Chauffeur> Chauffeurs
         {
-            get => new ObservableCollection<Chauffeur>(_chauffeurDAL.ObtenirChauffeursDisponibles());
+            get => _chauffeurs ;
         }
 
         public ObservableCollection<Course> Courses
         {
-            get => new ObservableCollection<Course>(_courseDAL.ObtenirCoursesDemandees());
+            get => _courses ;  
         }
         private Chauffeur _selectedChauffer;
         public Chauffeur SelectedChauffer
@@ -69,6 +72,8 @@ namespace Taxiturne.ViewModel
             LogoutCommand = new RelayCommand(Logout, CanLogout);
             AttribuerCommand = new RelayCommand(Attribuer, CanAttribuer);
             _chauffeurDAL = chauffeurDAL;
+            _courses = new ObservableCollection<Course>(_courseDAL.ObtenirCoursesDemandees());
+            _chauffeurs = new ObservableCollection<Chauffeur>(_chauffeurDAL.ObtenirChauffeursDisponibles());
         }
 
         public ICommand AttribuerCommand { get; set; }
@@ -104,9 +109,6 @@ namespace Taxiturne.ViewModel
                 course.Statut = StatutCourse.Affectee;
                 SelectedChauffer.EstDisponible = false;
                 _courseDAL.MettreAJour(course);
-                // Rafraîchir les collections pour refléter les changements
-                OnPropertyChanged(nameof(Chauffeur));
-                OnPropertyChanged(nameof(Course));
             }
         }
         
